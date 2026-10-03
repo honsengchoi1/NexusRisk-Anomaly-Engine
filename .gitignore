@@ -16,3 +16,8 @@ __pycache__/
 .venv
 env/
 venv/
+
+# OPSEC: Obfuscate Proprietary Backend
+src/
+*.py
+requirements.txt

@@ -66,7 +66,6 @@
 
         #main-view { flex: 1; display: flex; flex-direction: column; position: relative; }
         
-        /* The Overlay when streaming safely */
         .streaming-overlay {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(1, 4, 9, 0.85); z-index: 20;
@@ -92,7 +91,6 @@
         .legend-item { display: flex; align-items: center; margin-bottom: 6px; }
         .legend-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; display: inline-block; }
 
-        /* D3 Tooltip */
         .d3-tooltip {
             position: absolute; background: rgba(13, 17, 23, 0.95); border: 1px solid var(--border-color);
             padding: 12px; border-radius: 6px; color: var(--text-main); font-size: 12px;
@@ -108,9 +106,7 @@
         .shap-label { width: 220px; font-family: monospace; color: var(--text-main); }
         .shap-bar-container { flex: 1; background-color: var(--bg-color); height: 12px; border-radius: 6px; margin: 0 20px; border: 1px solid var(--border-color);}
         .shap-bar { height: 100%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s; border-radius: 5px;}
-        .shap-value { width: 60px; text-align: right; font-weight: 600; font-family: monospace; }
-        
-        .node text { font-family: -apple-system, sans-serif; font-size: 12px; fill: var(--text-main); pointer-events: none; font-weight: 500; text-shadow: 0px 2px 4px #000;}
+        .shap-value { width: 60px; text-align: right; font-weight: 600; font-family: monospace; color: var(--accent-red); }
         
         .idle-state {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -134,8 +130,6 @@
     </div>
 
     <div id="main-view">
-        
-        <!-- The Overlay for when system is Streaming safely -->
         <div id="monitoring-overlay" class="streaming-overlay">
             <div class="pulse-dot"></div>
             <h2>System Secure</h2>
@@ -182,34 +176,33 @@
             }
         }
 
-        // Sequence 1: Payments (Blame: V1 Reserve Drain)
+        // Sequence 1: Payments
         createNormals(12, "PAYMENTS", "TX-");
         eventStream.push({
             type: 'anomaly', domain: "PAYMENTS (Bust-Out Fraud Ring)", id: "10.0.99.99", score: 62.66,
-            shap: [80.8, 8.5, 5.5, 5.2, 0.0],
+            shap: [80.8, 8.5, 5.5, 5.2, 0.0], // V1 Target
             graph: {
                 nodes: [
                     { id: "10.0.99.99", label: "Attacker IP Address", group: "attacker", radius: 26, desc: "Source of high-velocity synthetic fraud ring." },
                     { id: "Card_A", label: "Compromised Account A", group: "victim", radius: 14, desc: "Legitimate retail account taken over." }, 
                     { id: "Card_B", label: "Compromised Account B", group: "victim", radius: 14, desc: "Legitimate retail account taken over." }, 
-                    { id: "Card_C", label: "Compromised Account C", group: "victim", radius: 14, desc: "Legitimate retail account taken over." }, 
                     { id: "Routing_X", label: "Shared Payout Gateway", group: "infrastructure", radius: 20, desc: "Adversarial cash-out rail (Irreversible Chokepoint)." }
                 ],
                 links: [
-                    { source: "10.0.99.99", target: "Card_A" }, { source: "10.0.99.99", target: "Card_B" }, { source: "10.0.99.99", target: "Card_C" },
+                    { source: "10.0.99.99", target: "Card_A" }, { source: "10.0.99.99", target: "Card_B" },
                     { source: "Card_A", target: "Routing_X" }, { source: "Card_B", target: "Routing_X" }
                 ]
             }
         });
 
-        // Sequence 2: Brokerage (Blame: V3 Speed Z-Score - Latency Arbitrage)
+        // Sequence 2: Brokerage
         createNormals(15, "BROKERAGE", "TRD-");
         eventStream.push({
             type: 'anomaly', domain: "BROKERAGE (Toxic Flow)", id: "TOXIC_ALGO_99", score: 70.20,
-            shap: [14.6, 9.1, 74.3, 2.0, 0.0], // Shifted blame to V3
+            shap: [14.6, 4.1, 79.3, 2.0, 0.0], // V3 Target
             graph: {
                 nodes: [
-                    { id: "TOXIC_ALGO_99", label: "Toxic Arbitrage Algo", group: "attacker", radius: 26, desc: "Executing latency arbitrage across fragmented sub-accounts." },
+                    { id: "TOXIC_ALGO_99", label: "Toxic Arbitrage Algo", group: "attacker", radius: 26, desc: "Executing latency arbitrage and exhausting free margin." },
                     { id: "Sub_Acct_A", label: "Correlated Sub-Account A", group: "victim", radius: 14, desc: "Used to evade single-account volume limits." },
                     { id: "Sub_Acct_B", label: "Correlated Sub-Account B", group: "victim", radius: 14, desc: "Used to evade single-account volume limits." },
                     { id: "FIX_API", label: "Shared FIX API Gateway", group: "infrastructure", radius: 20, desc: "Single execution session routing all toxic flow." }
@@ -221,14 +214,14 @@
             }
         });
 
-        // Sequence 3: Aviation (Blame: V2 Record Mismatch - Time Delay)
+        // Sequence 3: Aviation
         createNormals(10, "AVIATION", "FLT-");
         eventStream.push({
-            type: 'anomaly', domain: "AVIATION (Hub Delay)", id: "N999DL", score: 76.58,
-            shap: [18.2, 68.9, 2.4, 10.5, 0.0], // Shifted blame to V2
+            type: 'anomaly', domain: "AVIATION (Cascading Delay)", id: "N999DL", score: 76.58,
+            shap: [10.9, 80.9, 2.4, 5.8, 0.0], // V2 Target
             graph: {
                 nodes: [
-                    { id: "N999DL", label: "Grounded Aircraft", group: "attacker", radius: 26, desc: "Root Cause Hub Delay (Exceeded turnaround buffer)." },
+                    { id: "N999DL", label: "Grounded Aircraft", group: "attacker", radius: 26, desc: "Root Cause Hub Delay (Exhausted turnaround buffer)." },
                     { id: "Flt_A", label: "Connecting Flight A", group: "victim", radius: 14, desc: "Awaiting incoming physical aircraft." },
                     { id: "Crew_X", label: "Stranded Flight Crew", group: "infrastructure", radius: 20, desc: "Mandatory FAA Rest Period Triggered (Timeout)." },
                     { id: "Flt_B", label: "Connecting Flight B", group: "victim", radius: 14, desc: "Awaiting stranded pilot crew." }
@@ -239,9 +232,7 @@
             }
         });
 
-        let isPlaying = false;
-        let streamInterval = null;
-        let currentIndex = 0;
+        let isPlaying = false; let streamInterval = null; let currentIndex = 0;
         const queueDiv = document.getElementById('alert-queue');
         const overlay = document.getElementById('monitoring-overlay');
 
@@ -260,11 +251,9 @@
         }
 
         function toggleStream() {
-            if (isPlaying) {
-                pauseStream();
-            } else {
-                isPlaying = true;
-                overlay.classList.add('active'); // SHOW OVERLAY
+            if (isPlaying) { pauseStream(); } 
+            else {
+                isPlaying = true; overlay.classList.add('active'); 
                 document.getElementById('btn-play').innerText = "⏸ Pause";
                 document.getElementById('btn-play').style.color = "var(--accent-red)";
                 document.getElementById('stream-status').innerHTML = "● LIVE STREAMING ACTIVE";
@@ -274,8 +263,7 @@
         }
 
         function pauseStream() {
-            isPlaying = false;
-            overlay.classList.remove('active'); // HIDE OVERLAY
+            isPlaying = false; overlay.classList.remove('active'); 
             document.getElementById('btn-play').innerText = "▶ Stream";
             document.getElementById('btn-play').style.color = "var(--accent-green)";
             document.getElementById('stream-status').innerHTML = "● STREAM PAUSED";
@@ -290,50 +278,34 @@
                 divider.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:10px; margin:15px 0; letter-spacing:1px;">--- DATASET LOOP RESTART ---</div>`;
                 queueDiv.prepend(divider);
             }
-            
             const ev = eventStream[currentIndex];
-            
             if (ev.type === 'normal') {
-                const div = document.createElement('div');
-                div.className = 'normal-event';
+                const div = document.createElement('div'); div.className = 'normal-event';
                 div.innerHTML = `<span><span class="badge-safe">CLEARED</span> ${ev.domain} | ${ev.id}</span> <span>Risk: ${ev.score}</span>`;
                 queueDiv.prepend(div);
             } else {
-                const div = document.createElement('div');
-                div.className = 'alert-card active';
-                div.innerHTML = `
-                    <div class="domain">${ev.domain}</div>
-                    <div class="key">Target: ${ev.id}</div>
-                    <div class="score">Risk Score: <span style="color:var(--accent-red)">${ev.score}/100</span></div>
-                `;
-                
+                const div = document.createElement('div'); div.className = 'alert-card active';
+                div.innerHTML = `<div class="domain">${ev.domain}</div><div class="key">Target: ${ev.id}</div><div class="score">Risk Score: <span style="color:var(--accent-red)">${ev.score}/100</span></div>`;
                 document.querySelectorAll('.alert-card').forEach(c => c.classList.remove('active'));
                 queueDiv.prepend(div);
-                
-                loadAlertData(ev);
-                pauseStream(); // ANOMALY CAUGHT -> SHATTER OVERLAY & PAUSE
+                loadAlertData(ev); pauseStream();
             }
-            
             if(queueDiv.children.length > 50) queueDiv.removeChild(queueDiv.lastChild);
             currentIndex++;
         }
 
         function fastForward() {
-            pauseStream();
-            let found = false;
+            pauseStream(); let found = false;
             while(currentIndex < eventStream.length) {
                 const ev = eventStream[currentIndex];
                 if (ev.type === 'normal') {
-                    const div = document.createElement('div');
-                    div.className = 'normal-event';
+                    const div = document.createElement('div'); div.className = 'normal-event';
                     div.innerHTML = `<span><span class="badge-safe">CLEARED</span> ${ev.domain} | ${ev.id}</span> <span>Risk: ${ev.score}</span>`;
                     queueDiv.prepend(div);
                     if(queueDiv.children.length > 50) queueDiv.removeChild(queueDiv.lastChild);
                     currentIndex++;
                 } else {
-                    processNextEvent(); // Process anomaly and shatter overlay
-                    found = true;
-                    break;
+                    processNextEvent(); found = true; break;
                 }
             }
             if (!found) { currentIndex = 0; fastForward(); }
@@ -357,12 +329,9 @@
 
             const container = document.getElementById('graph-container');
             container.innerHTML = ''; 
-            const width = container.clientWidth;
-            const height = container.clientHeight;
+            const width = container.clientWidth; const height = container.clientHeight;
 
-            const svg = d3.select("#graph-container").append("svg")
-                .attr("width", width).attr("height", height);
-
+            const svg = d3.select("#graph-container").append("svg").attr("width", width).attr("height", height);
             if (currentSimulation) currentSimulation.stop();
 
             currentSimulation = d3.forceSimulation()
@@ -370,15 +339,11 @@
                 .force("charge", d3.forceManyBody().strength(-1500)) 
                 .force("center", d3.forceCenter(width / 2, height / 2 + 20));
 
-            // EXPLICIT LINE STYLING TO FIX MISSING LINES
-            const link = svg.append("g").attr("class", "links").selectAll("line")
-                .data(ev.graph.links).enter().append("line")
-                .attr("stroke", "#484f58")
-                .attr("stroke-width", 2.5)
-                .attr("stroke-opacity", 0.8);
+            // FIXED EXPLICIT LINE STYLES
+            const link = svg.append("g").attr("class", "links").selectAll("line").data(ev.graph.links).enter().append("line")
+                .attr("stroke", "#484f58").attr("stroke-width", 2.5).attr("stroke-opacity", 0.8);
 
-            const node = svg.append("g").attr("class", "nodes").selectAll("g")
-                .data(ev.graph.nodes).enter().append("g")
+            const node = svg.append("g").attr("class", "nodes").selectAll("g").data(ev.graph.nodes).enter().append("g")
                 .call(d3.drag()
                     .on("start", (event, d) => { if (!event.active) currentSimulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
                     .on("drag", (event, d) => { d.fx = event.x; d.fy = event.y; })
@@ -387,31 +352,32 @@
             node.append("circle")
                 .attr("r", d => d.radius)
                 .attr("fill", d => d.group === "attacker" ? "var(--accent-red)" : (d.group === "infrastructure" ? "var(--accent-blue)" : "var(--text-muted)"))
-                .attr("stroke", "#0d1117")
-                .attr("stroke-width", 2)
+                .attr("stroke", "#0d1117").attr("stroke-width", 2)
                 .on("mouseover", (event, d) => {
                     tooltip.style("opacity", 1)
                         .html(`<div class="tt-title">${d.label}</div><div class="tt-group">Classification: ${d.group}</div><div class="tt-desc">${d.desc}</div>`)
-                        .style("left", (event.pageX + 20) + "px")
-                        .style("top", (event.pageY - 20) + "px");
-                })
-                .on("mouseout", () => tooltip.style("opacity", 0));
+                        .style("left", (event.pageX + 20) + "px").style("top", (event.pageY - 20) + "px");
+                }).on("mouseout", () => tooltip.style("opacity", 0));
 
+            // FIXED TEXT STYLES (BRIGHT WHITE + SHADOW)
             node.append("text")
                 .attr("dy", d => d.radius + 15)
                 .attr("text-anchor", "middle")
+                .attr("fill", "#ffffff")
+                .style("font-family", "-apple-system, sans-serif")
+                .style("font-size", "12px")
+                .style("font-weight", "600")
+                .style("pointer-events", "none")
+                .style("text-shadow", "0px 2px 4px rgba(0,0,0,1), 0px -1px 3px rgba(0,0,0,1)")
                 .text(d => d.label);
 
             currentSimulation.nodes(ev.graph.nodes).on("tick", () => {
-                link.attr("x1", d => d.source.x).attr("y1", d => d.source.y)
-                    .attr("x2", d => d.target.x).attr("y2", d => d.target.y);
-                node.attr("transform", d => `translate(${Math.max(30, Math.min(width - 30, d.x))},${Math.max(30, Math.min(height - 30, d.y))})`);
+                link.attr("x1", d => d.source.x).attr("y1", d => d.source.y).attr("x2", d => d.target.x).attr("y2", d => d.target.y);
+                node.attr("transform", d => `translate(${Math.max(40, Math.min(width - 40, d.x))},${Math.max(40, Math.min(height - 40, d.y))})`);
             });
-
             currentSimulation.force("link").links(ev.graph.links);
         }
         
-        // Start in IDLE state, then fast-forward to first anomaly
         drawEmptyState();
         setTimeout(fastForward, 500);
     </script>

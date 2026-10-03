@@ -1,8 +1,8 @@
 """
-NEXUSRISK V2: Stateless ML Risk Engine (Module 03)
+NEXUSRISK V2: Stateless ML Risk Engine (Module 03 - Multi-Dimensional)
 Ingests mathematically pure Parquet geometries. 
 Executes Gate 1 (Isolation Forest Triage) and Gate 2 (Dynamic MAD Cohorts).
-Designed for functional minimalism and zero data mutation.
+Gate 2 is upgraded to scan ALL continuous vectors (V1, V2, V3, V5) simultaneously.
 """
 import os
 import duckdb
@@ -43,7 +43,7 @@ def run_ml_risk_engine():
         
         # ---------------------------------------------------------
         # 1. STATELESS INGESTION
-        # We sample 50,000 organic rows + all 5,000 attacks to simulate a live traffic window.
+        # We sample 50,000 organic rows + all 5,000 attacks
         # ---------------------------------------------------------
         query = f"""
             WITH 
@@ -94,16 +94,14 @@ def run_ml_risk_engine():
         # ---------------------------------------------------------
         # 3. METADATA ROUTING (STATISTICAL MICRO-COHORTS)
         # ---------------------------------------------------------
-        # Add micro-variance so pd.qcut doesn't crash on identical baseline zeroes
         df['v1_noisy'] = df['v1_reserve_drain'] + np.random.normal(0, 1e-6, len(df))
         try:
             df['micro_cohort'] = pd.qcut(df['v1_noisy'], q=4, labels=['Tier_Standard', 'Tier_Silver', 'Tier_Gold', 'Tier_Platinum'])
         except ValueError:
-            # Fallback if the data is too dense to split evenly
             df['micro_cohort'] = pd.cut(df['v1_noisy'], bins=4, labels=['Tier_Standard', 'Tier_Silver', 'Tier_Gold', 'Tier_Platinum'])
         
         # ---------------------------------------------------------
-        # 4. GATE 2: CONTEXTUAL COHORT SENTINEL (MAD)
+        # 4. GATE 2: CONTEXTUAL COHORT SENTINEL (MULTI-DIMENSIONAL MAD)
         # ---------------------------------------------------------
         gate1_flagged = df[df['gate1_alert'] == True].copy()
         gate1_cleared = df[df['gate1_alert'] == False].copy()
@@ -112,31 +110,29 @@ def run_ml_risk_engine():
         final_attackers_count = 0
         
         for cohort in ['Tier_Standard', 'Tier_Silver', 'Tier_Gold', 'Tier_Platinum']:
-            # Establish the "Normal" baseline using only safe users in THIS specific tier
-            cohort_baseline = gate1_cleared[gate1_cleared['micro_cohort'] == cohort]['v1_reserve_drain']
-            
-            if len(cohort_baseline) == 0:
-                # If no safe users exist in this cohort, default to confirming the alerts
-                final_attackers_count += len(gate1_flagged[(gate1_flagged['micro_cohort'] == cohort) & (gate1_flagged['link_key'] == attack_key)])
-                final_fp_count += len(gate1_flagged[(gate1_flagged['micro_cohort'] == cohort) & (gate1_flagged['link_key'] != attack_key)])
-                continue
-                
-            cohort_median = cohort_baseline.median()
-            # Calculate Median Absolute Deviation (MAD), + 0.001 prevents divide-by-zero
-            cohort_mad = (cohort_baseline - cohort_median).abs().median() + 0.001
-            
-            # Find the users flagged by Gate 1 in THIS specific tier
+            cohort_cleared = gate1_cleared[gate1_cleared['micro_cohort'] == cohort]
             cohort_flagged = gate1_flagged[gate1_flagged['micro_cohort'] == cohort].copy()
             
+            if len(cohort_cleared) == 0:
+                final_attackers_count += len(cohort_flagged[cohort_flagged['link_key'] == attack_key])
+                final_fp_count += len(cohort_flagged[cohort_flagged['link_key'] != attack_key])
+                continue
+            
             if len(cohort_flagged) > 0:
-                # Mathematical Distance from THIS tier's local median
-                cohort_flagged['mad_distance'] = (cohort_flagged['v1_reserve_drain'] - cohort_median).abs() / cohort_mad
+                # Calculate maximum MAD distance across ALL continuous vectors
+                max_mad_distance = pd.Series(0.0, index=cohort_flagged.index)
                 
-                # Gate 2 Rescue Logic: If distance > 10 MADs, confirm the alert. Else, rescue.
+                for v in ['v1_reserve_drain', 'v2_record_mismatch', 'v3_speed_zscore', 'v5_magnitude_vs_baseline']:
+                    v_baseline = cohort_cleared[v]
+                    v_median = v_baseline.median()
+                    v_mad = (v_baseline - v_median).abs().median() + 0.001
+                    v_dist = (cohort_flagged[v] - v_median).abs() / v_mad
+                    max_mad_distance = np.maximum(max_mad_distance, v_dist)
+                
+                # Gate 2 Rescue Logic: If max distance > 10 MADs on ANY vector, confirm the alert
                 mad_threshold = 10
-                cohort_flagged['gate2_confirmed'] = cohort_flagged['mad_distance'] > mad_threshold
+                cohort_flagged['gate2_confirmed'] = max_mad_distance > mad_threshold
                 
-                # Tally final results
                 final_attackers_count += len(cohort_flagged[(cohort_flagged['link_key'] == attack_key) & (cohort_flagged['gate2_confirmed'] == True)])
                 final_fp_count += len(cohort_flagged[(cohort_flagged['link_key'] != attack_key) & (cohort_flagged['gate2_confirmed'] == True)])
 
