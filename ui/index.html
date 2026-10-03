@@ -176,62 +176,63 @@
             }
         }
 
-        // Sequence 1: Payments
+// Sequence 1: Payments (Blame: V1 Reserve Drain)
         createNormals(12, "PAYMENTS", "TX-");
         eventStream.push({
-            type: 'anomaly', domain: "PAYMENTS (Bust-Out Fraud Ring)", id: "10.0.99.99", score: 62.66,
-            shap: [80.8, 8.5, 5.5, 5.2, 0.0], // V1 Target
+            type: 'anomaly', domain: "PAYMENTS (Account Takeover / ATO)", id: "10.0.99.99", score: 62.66,
+            shap: [80.8, 8.5, 5.5, 5.2, 0.0],
             graph: {
                 nodes: [
-                    { id: "10.0.99.99", label: "Attacker IP Address", group: "attacker", radius: 26, desc: "Source of high-velocity synthetic fraud ring." },
-                    { id: "Card_A", label: "Compromised Account A", group: "victim", radius: 14, desc: "Legitimate retail account taken over." }, 
-                    { id: "Card_B", label: "Compromised Account B", group: "victim", radius: 14, desc: "Legitimate retail account taken over." }, 
-                    { id: "Routing_X", label: "Shared Payout Gateway", group: "infrastructure", radius: 20, desc: "Adversarial cash-out rail (Irreversible Chokepoint)." }
+                    { id: "10.0.99.99", label: "Attacker IP Address", group: "attacker", radius: 26, desc: "Source of coordinated Account Takeover (ATO) attack." },
+                    { id: "Acct_8921", label: "Compromised Account", group: "victim", radius: 14, desc: "Legitimate retail credit facility hijacked by attacker." }, 
+                    { id: "Acct_4412", label: "Compromised Account", group: "victim", radius: 14, desc: "Legitimate retail credit facility hijacked by attacker." }, 
+                    { id: "P2P_Gateway", label: "High-Risk Withdrawal Gateway", group: "infrastructure", radius: 20, desc: "Irreversible external funds transfer (e.g., Wire/Crypto/P2P)." }
                 ],
                 links: [
-                    { source: "10.0.99.99", target: "Card_A" }, { source: "10.0.99.99", target: "Card_B" },
-                    { source: "Card_A", target: "Routing_X" }, { source: "Card_B", target: "Routing_X" }
+                    { source: "10.0.99.99", target: "Acct_8921" }, { source: "10.0.99.99", target: "Acct_4412" },
+                    { source: "Acct_8921", target: "P2P_Gateway" }, { source: "Acct_4412", target: "P2P_Gateway" }
                 ]
             }
         });
 
-        // Sequence 2: Brokerage
+        // Sequence 2: Brokerage (Blame: V3 Speed Z-Score)
         createNormals(15, "BROKERAGE", "TRD-");
         eventStream.push({
-            type: 'anomaly', domain: "BROKERAGE (Toxic Flow)", id: "TOXIC_ALGO_99", score: 70.20,
-            shap: [14.6, 4.1, 79.3, 2.0, 0.0], // V3 Target
+            type: 'anomaly', domain: "BROKERAGE (Toxic Flow)", id: "ALGO_99", score: 70.20,
+            shap: [14.6, 4.1, 79.3, 2.0, 0.0], 
             graph: {
                 nodes: [
-                    { id: "TOXIC_ALGO_99", label: "Toxic Arbitrage Algo", group: "attacker", radius: 26, desc: "Executing latency arbitrage and exhausting free margin." },
-                    { id: "Sub_Acct_A", label: "Correlated Sub-Account A", group: "victim", radius: 14, desc: "Used to evade single-account volume limits." },
-                    { id: "Sub_Acct_B", label: "Correlated Sub-Account B", group: "victim", radius: 14, desc: "Used to evade single-account volume limits." },
-                    { id: "FIX_API", label: "Shared FIX API Gateway", group: "infrastructure", radius: 20, desc: "Single execution session routing all toxic flow." }
+                    { id: "ALGO_99", label: "Toxic Flow Algo", group: "attacker", radius: 26, desc: "Predatory high-frequency algorithm executing latency arbitrage." },
+                    { id: "Sub_Acct_A", label: "Correlated Sub-Account", group: "victim", radius: 14, desc: "Used to fragment trade volume and evade single-account limits." },
+                    { id: "Sub_Acct_B", label: "Correlated Sub-Account", group: "victim", radius: 14, desc: "Used to fragment trade volume and evade single-account limits." },
+                    { id: "FIX_API", label: "Shared FIX API Gateway", group: "infrastructure", radius: 20, desc: "Single execution session routing all fragmented toxic flow." }
                 ],
                 links: [
-                    { source: "TOXIC_ALGO_99", target: "Sub_Acct_A" }, { source: "TOXIC_ALGO_99", target: "Sub_Acct_B" },
+                    { source: "ALGO_99", target: "Sub_Acct_A" }, { source: "ALGO_99", target: "Sub_Acct_B" },
                     { source: "Sub_Acct_A", target: "FIX_API" }, { source: "Sub_Acct_B", target: "FIX_API" }
                 ]
             }
         });
 
-        // Sequence 3: Aviation
+        // Sequence 3: Aviation (Blame: V2 Record Mismatch)
         createNormals(10, "AVIATION", "FLT-");
         eventStream.push({
-            type: 'anomaly', domain: "AVIATION (Cascading Delay)", id: "N999DL", score: 76.58,
-            shap: [10.9, 80.9, 2.4, 5.8, 0.0], // V2 Target
+            type: 'anomaly', domain: "AVIATION (Cascading Hub Delay)", id: "TAIL_N999DL", score: 76.58,
+            shap: [10.9, 80.9, 2.4, 5.8, 0.0], 
             graph: {
                 nodes: [
-                    { id: "N999DL", label: "Grounded Aircraft", group: "attacker", radius: 26, desc: "Root Cause Hub Delay (Exhausted turnaround buffer)." },
-                    { id: "Flt_A", label: "Connecting Flight A", group: "victim", radius: 14, desc: "Awaiting incoming physical aircraft." },
-                    { id: "Crew_X", label: "Stranded Flight Crew", group: "infrastructure", radius: 20, desc: "Mandatory FAA Rest Period Triggered (Timeout)." },
-                    { id: "Flt_B", label: "Connecting Flight B", group: "victim", radius: 14, desc: "Awaiting stranded pilot crew." }
+                    { id: "TAIL_N999DL", label: "Grounded Aircraft", group: "attacker", radius: 26, desc: "Root Cause: Mechanical failure exceeding scheduled turnaround buffer." },
+                    { id: "Flt_102", label: "Delayed Outbound Flight", group: "victim", radius: 14, desc: "Awaiting physical arrival of the broken aircraft." },
+                    { id: "Crew_441", label: "Stranded Flight Crew", group: "infrastructure", radius: 20, desc: "Pilots legally timed out due to FAA mandatory rest period violations." },
+                    { id: "Flt_881", label: "Downstream Flight", group: "victim", radius: 14, desc: "Grounded awaiting the stranded pilot crew." }
                 ],
                 links: [
-                    { source: "N999DL", target: "Flt_A" }, { source: "N999DL", target: "Crew_X" }, { source: "Crew_X", target: "Flt_B" }
+                    { source: "TAIL_N999DL", target: "Flt_102" }, { source: "TAIL_N999DL", target: "Crew_441" }, { source: "Crew_441", target: "Flt_881" }
                 ]
             }
         });
 
+        
         let isPlaying = false; let streamInterval = null; let currentIndex = 0;
         const queueDiv = document.getElementById('alert-queue');
         const overlay = document.getElementById('monitoring-overlay');
