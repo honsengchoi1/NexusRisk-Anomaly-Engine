@@ -299,3 +299,10 @@ pip install -r requirements.txt
 python src/01_download_baselines.py     
 python src/02_duckdb_etl_pipeline.py    
 python src/03_ml_risk_engine.py
+
+AI Prompt:
+write the readme ---> for wide audience without compromising the technicalities. don't make it a snooze fest. ---seo optimize
+
+a) explain the entire pipeline --- in plain english. the data is important --- tell story of the data evolution along the way.
+b) explain how what's needed for entreprise plug and play --- what needed to be swapped out
+c) explain its limitations

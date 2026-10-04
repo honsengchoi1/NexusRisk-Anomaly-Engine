@@ -5,113 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NexusRisk | Live Command Center</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    
+    <!-- DYNAMIC PAYLOAD INGESTION FROM ML ENGINE -->
+    <script src="live_exposure.js"></script>
+
     <style>
         :root {
-            --bg-color: #0d1117;
-            --panel-bg: #161b22;
-            --text-main: #c9d1d9;
-            --text-muted: #8b949e;
-            --accent-blue: #58a6ff;
-            --accent-red: #f85149;
-            --accent-green: #3fb950;
-            --border-color: #30363d;
-        }
-        body {
-            margin: 0; padding: 0;
-            background-color: var(--bg-color); color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            display: flex; height: 100vh; overflow: hidden;
+            --bg-color: #0d1117; --panel-bg: #161b22; --text-main: #c9d1d9; --text-muted: #8b949e;
+            --accent-blue: #58a6ff; --accent-red: #f85149; --accent-green: #3fb950; --border-color: #30363d;
         }
         
-        #sidebar {
-            width: 400px; background-color: var(--panel-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex; flex-direction: column; z-index: 10;
-        }
-        .header { padding: 20px; border-bottom: 1px solid var(--border-color); }
-        .header h1 { margin: 0; font-size: 1.4rem; color: var(--text-main); letter-spacing: 1.5px; }
+        /* Elite Minimalist Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+        body { margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; display: flex; height: 100vh; overflow: hidden; font-size: 16px; }
+        
+        /* EXPANDED SIDEBAR TO ACCOMMODATE LARGER FONTS */
+        #sidebar { width: 420px; min-width: 420px; background-color: var(--panel-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; z-index: 10; }
+        
+        .header { padding: 22px 25px; border-bottom: 1px solid var(--border-color); }
+        .header h1 { margin: 0; font-size: 1.5rem; color: var(--text-main); letter-spacing: 1.5px; }
         .header h1 span { color: var(--accent-red); }
-        .header p { margin: 5px 0 0 0; font-size: 0.75rem; color: var(--accent-green); text-transform: uppercase; font-weight: 600; letter-spacing: 1px;}
+        .header p { margin: 6px 0 0 0; font-size: 0.8rem; color: var(--accent-green); text-transform: uppercase; font-weight: 600; letter-spacing: 1px;}
         
-        .controls { display: flex; gap: 10px; padding: 15px 20px; border-bottom: 1px solid var(--border-color); background: #010409;}
-        .btn {
-            flex: 1; padding: 10px; border-radius: 4px; border: 1px solid var(--border-color);
-            background: var(--panel-bg); color: var(--text-main); font-size: 11px; cursor: pointer;
-            text-transform: uppercase; font-weight: bold; transition: 0.2s;
-        }
+        .controls { display: flex; gap: 12px; padding: 18px 25px; border-bottom: 1px solid var(--border-color); background: #010409;}
+        .btn { flex: 1; padding: 12px; border-radius: 4px; border: 1px solid var(--border-color); background: var(--panel-bg); color: var(--text-main); font-size: 12px; cursor: pointer; text-transform: uppercase; font-weight: bold; transition: 0.2s; }
         .btn:hover { border-color: var(--text-muted); }
         #btn-play { color: var(--accent-green); }
         #btn-ff { color: var(--accent-blue); }
 
-        .alert-queue { flex: 1; overflow-y: auto; padding: 10px; background: #010409;}
+        .alert-queue { flex: 1; overflow-y: auto; padding: 15px 25px; background: #010409;}
         
-        .normal-event {
-            padding: 8px 10px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); 
-            display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);
-            font-family: monospace; animation: fadeIn 0.3s ease-out;
-        }
-        .badge-safe { color: var(--accent-green); border: 1px solid rgba(63, 185, 80, 0.4); padding: 2px 5px; border-radius: 3px; font-size: 9px;}
+        .normal-event { padding: 10px 10px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); font-family: monospace; animation: fadeIn 0.3s ease-out; }
+        .badge-safe { color: var(--accent-green); border: 1px solid rgba(63, 185, 80, 0.4); padding: 3px 6px; border-radius: 3px; font-size: 10px; margin-right: 8px;}
         
-        .alert-card {
-            background-color: var(--panel-bg); border: 1px solid var(--accent-red);
-            border-radius: 6px; padding: 15px; margin: 10px 0;
-            cursor: pointer; position: relative; animation: fadeIn 0.3s ease-out;
-            box-shadow: 0 0 10px rgba(248, 81, 73, 0.2);
-        }
+        .alert-card { background-color: var(--panel-bg); border: 1px solid var(--accent-red); border-radius: 6px; padding: 20px; margin: 15px 0; cursor: pointer; position: relative; animation: fadeIn 0.3s ease-out; box-shadow: 0 0 10px rgba(248, 81, 73, 0.2); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
         
-        .alert-card .domain { font-size: 0.75rem; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;}
-        .alert-card .key { font-size: 1.1rem; font-weight: 600; margin: 0 0 8px 0; font-family: monospace; color: var(--accent-red); }
-        .alert-card .score { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
+        /* RESTORED LARGER TYPOGRAPHY */
+        .alert-card .domain { font-size: 0.8rem; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;}
+        .alert-card .key { font-size: 1.25rem; font-weight: 600; margin: 0 0 12px 0; font-family: monospace; color: var(--accent-red); }
+        .alert-card .score { font-size: 0.95rem; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; }
 
         #main-view { flex: 1; display: flex; flex-direction: column; position: relative; }
         
-        .streaming-overlay {
-            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(1, 4, 9, 0.85); z-index: 20;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            backdrop-filter: blur(4px); transition: opacity 0.3s; opacity: 0; pointer-events: none;
-        }
+        .streaming-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(1, 4, 9, 0.85); z-index: 20; display: flex; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(4px); transition: opacity 0.3s; opacity: 0; pointer-events: none; }
         .streaming-overlay.active { opacity: 1; pointer-events: all; }
-        .pulse-dot { width: 16px; height: 16px; background-color: var(--accent-green); border-radius: 50%; box-shadow: 0 0 15px var(--accent-green); margin-bottom: 20px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.8; } }
-        .streaming-overlay h2 { color: var(--accent-green); letter-spacing: 2px; text-transform: uppercase; font-size: 18px; margin: 0;}
-        .streaming-overlay p { color: var(--text-muted); font-family: monospace; font-size: 12px; margin-top: 10px;}
+        .pulse-dot { width: 18px; height: 18px; background-color: var(--accent-green); border-radius: 50%; box-shadow: 0 0 18px var(--accent-green); margin-bottom: 22px; animation: pulse 1.5s infinite; }
+        .streaming-overlay h2 { color: var(--accent-green); letter-spacing: 2px; text-transform: uppercase; font-size: 20px; margin: 0;}
+        .streaming-overlay p { color: var(--text-muted); font-family: monospace; font-size: 13px; margin-top: 12px;}
 
         #graph-panel { flex: 2; position: relative; display: flex; flex-direction: column; border-bottom: 1px solid var(--border-color);}
-        .panel-title { margin: 0 0 5px 0; font-size: 1rem; color: var(--text-main); text-transform: uppercase; letter-spacing: 1px; }
-        .panel-subtitle { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+        .panel-title { margin: 0 0 6px 0; font-size: 1.1rem; color: var(--text-main); text-transform: uppercase; letter-spacing: 1px; }
+        .panel-subtitle { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
         #graph-container { flex: 1; width: 100%; height: 100%; }
         
-        .graph-legend {
-            position: absolute; bottom: 20px; left: 25px; background: rgba(13, 17, 23, 0.9);
-            padding: 12px; border: 1px solid var(--border-color); border-radius: 6px;
-            font-size: 11px; color: var(--text-main); pointer-events: none; z-index: 5;
-        }
-        .legend-item { display: flex; align-items: center; margin-bottom: 6px; }
-        .legend-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; display: inline-block; }
+        .graph-legend { position: absolute; bottom: 25px; left: 30px; background: rgba(13, 17, 23, 0.9); padding: 14px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 12px; color: var(--text-main); pointer-events: none; z-index: 5; }
+        .legend-item { display: flex; align-items: center; margin-bottom: 8px; }
+        .legend-dot { width: 14px; height: 14px; border-radius: 50%; margin-right: 12px; display: inline-block; }
 
-        .d3-tooltip {
-            position: absolute; background: rgba(13, 17, 23, 0.95); border: 1px solid var(--border-color);
-            padding: 12px; border-radius: 6px; color: var(--text-main); font-size: 12px;
-            pointer-events: none; opacity: 0; box-shadow: 0 8px 16px rgba(0,0,0,0.5);
-            z-index: 1000; transition: opacity 0.2s;
-        }
-        .tt-title { color: var(--accent-blue); font-weight: bold; font-size: 14px; margin-bottom: 4px;}
-        .tt-group { color: var(--text-muted); text-transform: uppercase; font-size: 10px; letter-spacing: 1px; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 4px;}
-        .tt-desc { font-family: monospace; font-size: 11px; color: #f0f6fc;}
+        .d3-tooltip { position: absolute; background: rgba(13, 17, 23, 0.95); border: 1px solid var(--border-color); padding: 14px; border-radius: 6px; color: var(--text-main); font-size: 13px; pointer-events: none; opacity: 0; box-shadow: 0 8px 16px rgba(0,0,0,0.5); z-index: 1000; transition: opacity 0.2s; }
+        .tt-title { color: var(--accent-blue); font-weight: bold; font-size: 15px; margin-bottom: 5px;}
+        .tt-group { color: var(--text-muted); text-transform: uppercase; font-size: 11px; letter-spacing: 1px; margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;}
+        .tt-desc { font-family: monospace; font-size: 12px; color: #f0f6fc;}
 
-        #shap-panel { flex: 1; background-color: var(--panel-bg); padding: 25px; overflow-y: auto; position: relative;}
-        .shap-row { display: flex; align-items: center; margin-bottom: 12px; font-size: 0.85rem; }
-        .shap-label { width: 220px; font-family: monospace; color: var(--text-main); }
-        .shap-bar-container { flex: 1; background-color: var(--bg-color); height: 12px; border-radius: 6px; margin: 0 20px; border: 1px solid var(--border-color);}
-        .shap-bar { height: 100%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s; border-radius: 5px;}
-        .shap-value { width: 60px; text-align: right; font-weight: 600; font-family: monospace; color: var(--accent-red); }
+        /* SHAP PANEL OPTIMIZATION: DYNAMIC FLEX SPACING */
+        #shap-panel { flex: 1; background-color: var(--panel-bg); padding: 30px; display: flex; flex-direction: column; position: relative;}
+        #shap-metrics { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; margin-top: 15px; }
         
-        .idle-state {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; color: var(--text-muted); font-family: monospace; letter-spacing: 1px; font-size: 14px;
-        }
+        .shap-row { display: flex; align-items: center; font-size: 0.95rem; }
+        .shap-label { width: 240px; font-family: monospace; color: var(--text-main); }
+        .shap-bar-container { flex: 1; background-color: var(--bg-color); height: 16px; border-radius: 8px; margin: 0 25px; border: 1px solid var(--border-color);}
+        .shap-bar { height: 100%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s; border-radius: 7px;}
+        .shap-value { width: 65px; text-align: right; font-weight: 600; font-family: monospace; color: var(--accent-red); }
+        
+        .idle-state { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: var(--text-muted); font-family: monospace; letter-spacing: 1px; font-size: 15px; }
         .idle-state span { color: var(--accent-green); font-weight: bold;}
     </style>
 </head>
@@ -138,7 +109,7 @@
         </div>
 
         <div id="graph-panel">
-            <div style="padding: 20px 25px 0 25px; position: absolute; z-index: 10;">
+            <div style="padding: 25px 30px 0 30px; position: absolute; z-index: 10;">
                 <h2 class="panel-title">Downstream Network Contagion</h2>
                 <p class="panel-subtitle">Force-Directed Link Analysis (Live Routing)</p>
             </div>
@@ -154,85 +125,95 @@
         </div>
         
         <div id="shap-panel">
-            <h2 class="panel-title">SR 11-7 Compliance: TreeSHAP Blame Matrix</h2>
-            <p class="panel-subtitle" style="margin-bottom: 20px;">Exact root-cause mathematical isolation for regulatory adverse action notices.</p>
+            <div>
+                <h2 class="panel-title">SR 11-7 Compliance: TreeSHAP Blame Matrix</h2>
+                <p class="panel-subtitle">Exact root-cause mathematical isolation for regulatory adverse action notices.</p>
+            </div>
             <div id="shap-metrics">
-                <div class="idle-state" style="margin-top: 40px;">SHAP EXPLAINABILITY ENGINE IDLE<br><br><span>[ SAVING COMPUTE CYCLES DURING NORMAL TRAFFIC ]</span></div>
+                <div class="idle-state" style="position: relative; top: auto; left: auto; transform: none; margin-top: 50px;">SHAP EXPLAINABILITY ENGINE IDLE<br><br><span>[ SAVING COMPUTE CYCLES DURING NORMAL TRAFFIC ]</span></div>
             </div>
         </div>
     </div>
 
     <script>
-        const featuresList = ["V1_RESERVE_DRAIN", "V2_RECORD_MISMATCH", "V3_SPEED_ZSCORE", "V5_MAGNITUDE_VS_BASE", "V4_CHOKEPOINT"];
+        // Safely load the live exposure data or fall back to defaults
+        const activeExposure = typeof liveExposure !== 'undefined' ? liveExposure : {
+            "PAYMENTS": { value: "$139,484", label: "1-Day Capital Risk" },
+            "BROKERAGE": { value: "$321,805", label: "1-Day Capital Risk" },
+            "AVIATION": { value: "315 Mins", label: "1-Day Delay Risk" }
+        };
+
+        // CORRECTED VECTOR ORDER
+        const featuresList = ["V1_RESERVE_DRAIN", "V2_RECORD_MISMATCH", "V3_SPEED_ZSCORE", "V4_CHOKEPOINT", "V5_MAGNITUDE_VS_BASE"];
+        
         const eventStream = [];
         let nCounter = 1000;
         
         function createNormals(count, domain, prefix) {
             for(let i=0; i<count; i++) {
-                eventStream.push({
-                    type: 'normal', domain: domain, id: prefix + (nCounter++), 
-                    score: (Math.random() * 20 + 5).toFixed(1)
-                });
+                eventStream.push({ type: 'normal', domain: domain, id: prefix + (nCounter++), score: (Math.random() * 20 + 5).toFixed(1) });
             }
         }
 
-// Sequence 1: Payments (Blame: V1 Reserve Drain)
+// Sequence 1: Payments
         createNormals(12, "PAYMENTS", "TX-");
         eventStream.push({
-            type: 'anomaly', domain: "PAYMENTS (Account Takeover / ATO)", id: "10.0.99.99", score: 62.66,
-            shap: [80.8, 8.5, 5.5, 5.2, 0.0],
+            type: 'anomaly', domain: "PAYMENTS (Bust-Out Fraud Ring)", id: "10.0.99.99", score: 62.66,
+            shap: [80.8, 8.5, 5.5, 0.0, 5.2],
+            exposure: activeExposure["PAYMENTS"],
             graph: {
                 nodes: [
-                    { id: "10.0.99.99", label: "Attacker IP Address", group: "attacker", radius: 26, desc: "Source of coordinated Account Takeover (ATO) attack." },
-                    { id: "Acct_8921", label: "Compromised Account", group: "victim", radius: 14, desc: "Legitimate retail credit facility hijacked by attacker." }, 
-                    { id: "Acct_4412", label: "Compromised Account", group: "victim", radius: 14, desc: "Legitimate retail credit facility hijacked by attacker." }, 
-                    { id: "P2P_Gateway", label: "High-Risk Withdrawal Gateway", group: "infrastructure", radius: 20, desc: "Irreversible external funds transfer (e.g., Wire/Crypto/P2P)." }
+                    { id: "10.0.99.99", label: "Attacker IP Address", group: "attacker", radius: 28, desc: "Root Cause: Coordinated Account Takeover (ATO) attack." },
+                    { id: "Card_A", label: "Compromised Account A", group: "victim", radius: 16, desc: "Primary Impact: Legitimate retail credit facility hijacked." }, 
+                    { id: "Card_B", label: "Compromised Account B", group: "victim", radius: 16, desc: "Secondary Impact: Legitimate retail credit facility hijacked." }, 
+                    { id: "Routing_X", label: "Shared Payout Gateway", group: "infrastructure", radius: 22, desc: "Terminal Risk: Irreversible external cash-out (Wire/Crypto)." }
                 ],
                 links: [
-                    { source: "10.0.99.99", target: "Acct_8921" }, { source: "10.0.99.99", target: "Acct_4412" },
-                    { source: "Acct_8921", target: "P2P_Gateway" }, { source: "Acct_4412", target: "P2P_Gateway" }
+                    { source: "10.0.99.99", target: "Card_A" }, { source: "10.0.99.99", target: "Card_B" },
+                    { source: "Card_A", target: "Routing_X" }, { source: "Card_B", target: "Routing_X" }
                 ]
             }
         });
 
-        // Sequence 2: Brokerage (Blame: V3 Speed Z-Score)
+        // Sequence 2: Brokerage
         createNormals(15, "BROKERAGE", "TRD-");
         eventStream.push({
-            type: 'anomaly', domain: "BROKERAGE (Toxic Flow)", id: "ALGO_99", score: 70.20,
-            shap: [14.6, 4.1, 79.3, 2.0, 0.0], 
+            type: 'anomaly', domain: "BROKERAGE (Toxic Flow)", id: "TOXIC_ALGO_99", score: 70.20,
+            shap: [14.6, 4.1, 79.3, 0.0, 2.0],
+            exposure: activeExposure["BROKERAGE"],
             graph: {
                 nodes: [
-                    { id: "ALGO_99", label: "Toxic Flow Algo", group: "attacker", radius: 26, desc: "Predatory high-frequency algorithm executing latency arbitrage." },
-                    { id: "Sub_Acct_A", label: "Correlated Sub-Account", group: "victim", radius: 14, desc: "Used to fragment trade volume and evade single-account limits." },
-                    { id: "Sub_Acct_B", label: "Correlated Sub-Account", group: "victim", radius: 14, desc: "Used to fragment trade volume and evade single-account limits." },
-                    { id: "FIX_API", label: "Shared FIX API Gateway", group: "infrastructure", radius: 20, desc: "Single execution session routing all fragmented toxic flow." }
+                    { id: "TOXIC_ALGO_99", label: "Toxic Latency Algo", group: "attacker", radius: 28, desc: "Root Cause: High-frequency latency arbitrage exhausting margin." },
+                    { id: "Sub_Acct_A", label: "Correlated Sub-Account A", group: "victim", radius: 16, desc: "Primary Impact: Shell account used to evade single-account limits." },
+                    { id: "Sub_Acct_B", label: "Correlated Sub-Account B", group: "victim", radius: 16, desc: "Secondary Impact: Shell account used to evade single-account limits." },
+                    { id: "FIX_API", label: "Shared FIX API Gateway", group: "infrastructure", radius: 22, desc: "Terminal Risk: Single gateway processing all toxic flow." }
                 ],
                 links: [
-                    { source: "ALGO_99", target: "Sub_Acct_A" }, { source: "ALGO_99", target: "Sub_Acct_B" },
+                    { source: "TOXIC_ALGO_99", target: "Sub_Acct_A" }, { source: "TOXIC_ALGO_99", target: "Sub_Acct_B" },
                     { source: "Sub_Acct_A", target: "FIX_API" }, { source: "Sub_Acct_B", target: "FIX_API" }
                 ]
             }
         });
 
-        // Sequence 3: Aviation (Blame: V2 Record Mismatch)
+        // Sequence 3: Aviation
         createNormals(10, "AVIATION", "FLT-");
         eventStream.push({
             type: 'anomaly', domain: "AVIATION (Cascading Hub Delay)", id: "TAIL_N999DL", score: 76.58,
-            shap: [10.9, 80.9, 2.4, 5.8, 0.0], 
+            shap: [10.9, 80.9, 2.4, 0.0, 5.8],
+            exposure: activeExposure["AVIATION"],
             graph: {
                 nodes: [
-                    { id: "TAIL_N999DL", label: "Grounded Aircraft", group: "attacker", radius: 26, desc: "Root Cause: Mechanical failure exceeding scheduled turnaround buffer." },
-                    { id: "Flt_102", label: "Delayed Outbound Flight", group: "victim", radius: 14, desc: "Awaiting physical arrival of the broken aircraft." },
-                    { id: "Crew_441", label: "Stranded Flight Crew", group: "infrastructure", radius: 20, desc: "Pilots legally timed out due to FAA mandatory rest period violations." },
-                    { id: "Flt_881", label: "Downstream Flight", group: "victim", radius: 14, desc: "Grounded awaiting the stranded pilot crew." }
+                    { id: "TAIL_N999DL", label: "Grounded Aircraft", group: "attacker", radius: 28, desc: "Root Cause: Unscheduled maintenance delays takeoff." },
+                    { id: "Flt_A", label: "Delayed Outbound Flight", group: "victim", radius: 16, desc: "Primary Impact: Departure held awaiting physical aircraft." },
+                    { id: "Crew_X", label: "Stranded Flight Crew", group: "infrastructure", radius: 22, desc: "Secondary Impact: Delay pushes flight crew past legal shift limits." },
+                    { id: "Flt_B", label: "Downstream Flight", group: "victim", radius: 16, desc: "Terminal Risk: Downstream flight canceled due to missing crew." }
                 ],
                 links: [
-                    { source: "TAIL_N999DL", target: "Flt_102" }, { source: "TAIL_N999DL", target: "Crew_441" }, { source: "Crew_441", target: "Flt_881" }
+                    { source: "TAIL_N999DL", target: "Flt_A" }, { source: "TAIL_N999DL", target: "Crew_X" }, { source: "Crew_X", target: "Flt_B" }
                 ]
             }
         });
 
-        
         let isPlaying = false; let streamInterval = null; let currentIndex = 0;
         const queueDiv = document.getElementById('alert-queue');
         const overlay = document.getElementById('monitoring-overlay');
@@ -276,17 +257,24 @@
             if (currentIndex >= eventStream.length) {
                 currentIndex = 0; 
                 const divider = document.createElement('div');
-                divider.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:10px; margin:15px 0; letter-spacing:1px;">--- DATASET LOOP RESTART ---</div>`;
+                divider.innerHTML = `<div style="text-align:center; color:var(--text-muted); font-size:11px; margin:20px 0; letter-spacing:1px;">--- DATASET LOOP RESTART ---</div>`;
                 queueDiv.prepend(divider);
             }
             const ev = eventStream[currentIndex];
             if (ev.type === 'normal') {
                 const div = document.createElement('div'); div.className = 'normal-event';
-                div.innerHTML = `<span><span class="badge-safe">CLEARED</span> ${ev.domain} | ${ev.id}</span> <span>Risk: ${ev.score}</span>`;
+                div.innerHTML = `<span style="display:flex; align-items:center;"><span class="badge-safe">CLEARED</span> ${ev.domain} | ${ev.id}</span> <span>Risk: ${ev.score}</span>`;
                 queueDiv.prepend(div);
             } else {
                 const div = document.createElement('div'); div.className = 'alert-card active';
-                div.innerHTML = `<div class="domain">${ev.domain}</div><div class="key">Target: ${ev.id}</div><div class="score">Risk Score: <span style="color:var(--accent-red)">${ev.score}/100</span></div>`;
+                
+                div.innerHTML = `
+                    <div class="domain">${ev.domain}</div>
+                    <div class="key">Target: ${ev.id}</div>
+                    <div class="score">Risk Score: <span style="color:var(--accent-red)">${ev.score}/100</span></div>
+                    <div class="score" style="margin-top: 6px; text-transform: uppercase;">${ev.exposure.label}: <span style="color:var(--accent-red)">${ev.exposure.value}</span></div>
+                `;
+                
                 document.querySelectorAll('.alert-card').forEach(c => c.classList.remove('active'));
                 queueDiv.prepend(div);
                 loadAlertData(ev); pauseStream();
@@ -301,7 +289,7 @@
                 const ev = eventStream[currentIndex];
                 if (ev.type === 'normal') {
                     const div = document.createElement('div'); div.className = 'normal-event';
-                    div.innerHTML = `<span><span class="badge-safe">CLEARED</span> ${ev.domain} | ${ev.id}</span> <span>Risk: ${ev.score}</span>`;
+                    div.innerHTML = `<span style="display:flex; align-items:center;"><span class="badge-safe">CLEARED</span> ${ev.domain} | ${ev.id}</span> <span>Risk: ${ev.score}</span>`;
                     queueDiv.prepend(div);
                     if(queueDiv.children.length > 50) queueDiv.removeChild(queueDiv.lastChild);
                     currentIndex++;
@@ -336,11 +324,10 @@
             if (currentSimulation) currentSimulation.stop();
 
             currentSimulation = d3.forceSimulation()
-                .force("link", d3.forceLink().id(d => d.id).distance(150))
-                .force("charge", d3.forceManyBody().strength(-1500)) 
+                .force("link", d3.forceLink().id(d => d.id).distance(160))
+                .force("charge", d3.forceManyBody().strength(-1800)) 
                 .force("center", d3.forceCenter(width / 2, height / 2 + 20));
 
-            // FIXED EXPLICIT LINE STYLES
             const link = svg.append("g").attr("class", "links").selectAll("line").data(ev.graph.links).enter().append("line")
                 .attr("stroke", "#484f58").attr("stroke-width", 2.5).attr("stroke-opacity", 0.8);
 
@@ -360,13 +347,12 @@
                         .style("left", (event.pageX + 20) + "px").style("top", (event.pageY - 20) + "px");
                 }).on("mouseout", () => tooltip.style("opacity", 0));
 
-            // FIXED TEXT STYLES (BRIGHT WHITE + SHADOW)
             node.append("text")
-                .attr("dy", d => d.radius + 15)
+                .attr("dy", d => d.radius + 18)
                 .attr("text-anchor", "middle")
                 .attr("fill", "#ffffff")
                 .style("font-family", "-apple-system, sans-serif")
-                .style("font-size", "12px")
+                .style("font-size", "13px")
                 .style("font-weight", "600")
                 .style("pointer-events", "none")
                 .style("text-shadow", "0px 2px 4px rgba(0,0,0,1), 0px -1px 3px rgba(0,0,0,1)")
