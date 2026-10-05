@@ -1,4 +1,4 @@
-# 🌐 NexusRisk: Cross-Industry Anomaly Triage & Risk Architecture
+# 🌐 NexusRisk: Cross-Industry Anomaly Triage & Link Architecture
 **An Executive Whitepaper on Stateless Zero-Day Detection and False Positive Eradication**
 
 **Architect:** Hon Seng Choi | Principal Quantitative Risk Architect  
