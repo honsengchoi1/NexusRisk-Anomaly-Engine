@@ -1,6 +1,6 @@
 const liveExposure = {
     "PAYMENTS": {
-        "value": "$142,169",
+        "value": "$148,590",
         "label": "1-Day Capital Risk"
     },
     "BROKERAGE": {

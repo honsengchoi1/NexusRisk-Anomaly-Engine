@@ -17,7 +17,23 @@ __pycache__/
 env/
 venv/
 
+# VS Code / IDE Settings
+.vscode/
+
 # OPSEC: Obfuscate Proprietary Backend
 src/
 *.py
 requirements.txt
+
+# Local Utility Scripts & Sketchpads
+path_scanner_v1.py
+generate_visuals.py
+project_state.md
+docs/Architecture_Notes.md
+Architecture_Notes.md
+
+# Social Media Drafts
+docs/linkedin_post_01.md
+docs/linkedin_post_01.pdf
+linkedin_post_01.md
+linkedin_post_01.pdf
