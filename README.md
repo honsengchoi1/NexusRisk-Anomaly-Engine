@@ -4,7 +4,7 @@
 **Target Scope:** Enterprise Anomaly Detection, Financial Operations, Link Analysis  
 **Core Infrastructure:** DuckDB (Zero-Copy OLAP), Python, Isolation Forest, TreeSHAP, D3.js  
 
-👉 [**View the Live Interactive Command Center HUD**](https://honsengchoi1.github.io/NexusRisk-Anomaly-Engine/) *(Best viewed on Desktop)*
+👉 [**View the Live Interactive Command Center HUD**](https://honsengchoi1.github.io/NexusRisk-Anomaly-Engine/ui/) 
 
 ---
 
@@ -46,7 +46,7 @@ To prove the engine works against authentic noise, the pipeline ingests **167 mi
 
 ### 2. Dual-Gate Unsupervised Inference Engine
 *   **Gate 1 (Isolation Forest):** Scans the geometric void created by the DuckDB normalization layer, successfully trapping **~99.8%** of the injected zero-day attacks instantly.
-*   **Gate 2 (False Positive Rescue):** Unsupervised AI inherently over-flags during macro volume surges. Flagged entities are routed through a secondary, proprietary contextual validation gate, mathematically rescuing **~98% to 100% of False Positives**. *(Note: Specific thresholding mechanics are omitted from public documentation for operational security).*
+*   **Gate 2 (False Positive Rescue):** Unsupervised AI inherently over-flags during macro volume surges. Flagged entities are routed through a secondary, proprietary contextual validation gate, mathematically rescuing **~98% to 100% of False Positives**.
 
 ### 3. Model Risk Management & Interpretability
 Black-box AI is a regulatory liability. Every alert that survives Gate 2 natively integrates **Exact TreeSHAP** to output a deterministic, plain-English root cause matrix that strictly sums to 100%, enabling auditable, transparent adverse action notices.
@@ -98,4 +98,3 @@ To deploy this exact architecture into a live enterprise ecosystem (e.g., a comm
 No risk engine is a silver bullet. This architecture makes intentional engineering trade-offs:
 
 1.  **Asynchronous Compute Overhead:** While the Isolation Forest scores network geometry in low milliseconds, calculating Exact TreeSHAP for regulatory explanation is computationally heavy. In ultra-high-frequency environments (e.g., sub-millisecond market arbitrage), SHAP calculation must be decoupled and processed asynchronously in a secondary queue so it does not block the primary transaction execution path.
-2.  **Operational Security Constraint (Gate 2):** To prevent adversarial poisoning attacks, the exact parameters, dynamic look-back periods, and cohort definitions utilized in Gate 2 are decoupled from the open-source repository.
